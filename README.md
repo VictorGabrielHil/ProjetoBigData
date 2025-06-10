@@ -154,31 +154,3 @@ python DataProcessor_2.py
 ### 7. Análise dos Resultados
 
 Os scripts imprimirão os tempos de execução diretamente no console, apresentando a comparação entre Spark (MapReduce/RDD) e PostgreSQL (SQL) para cada consulta.
-
-## Resultados e Conclusão
-
-Com base nos testes realizados com o volume de dados atual (arquivos CSV de pequeno a médio porte, como 24MB):
-
-**Desempenho:**
-
-Os resultados demonstram consistentemente que o **PostgreSQL (com consultas SQL) supera o Apache Spark (com a API RDD para MapReduce) em ordens de magnitude**. Em cenários como agregação simples, filtragem complexa e cálculo de médias, o PostgreSQL foi dezenas a centenas de vezes mais rápido que o Spark.
-
-**Análise:**
-
-- **PostgreSQL (SQL):** É altamente otimizado para cargas de trabalho OLAP em dados estruturados que podem ser processados eficientemente em um único servidor. Seu otimizador de consultas e mecanismos internos de indexação permitem execuções rápidas e eficientes para as operações relacionais padrão.
-
-- **Apache Spark (MapReduce/RDD):** Embora seja uma ferramenta poderosa para Big Data e processamento distribuído, introduz uma sobrecarga significativa para volumes de dados menores. O custo de inicialização da JVM, a orquestração de tarefas e a comunicação entre o driver e os workers (mesmo em modo local) superam os benefícios de desempenho para conjuntos de dados que cabem na memória ou em um único servidor. O paradigma MapReduce/RDD, embora flexível para lógica programática complexa, não se beneficia das otimizações de consultas relacionais que são intrínsecas ao Spark SQL e à API DataFrame, o que pode explicar parte da diferença de desempenho.
-
-**Conclusão:**
-
-Para o volume de dados e o tipo de consultas exploradas neste projeto, o **PostgreSQL é a escolha mais eficiente e performática**. O Spark (e o MapReduce/RDD) é mais adequado para cenários de **Big Data** (terabytes/petabytes), onde a necessidade de escalabilidade horizontal e processamento distribuído justifica a sobrecarga e a complexidade de sua arquitetura. Para dados que se encaixam em um único servidor, um banco de dados relacional tradicional como o PostgreSQL ainda é a solução mais robusta e eficiente para consultas analíticas.
-
-Este projeto ilustra claramente os trade-offs entre as tecnologias e seus respectivos casos de uso ideais.
-
-## Contribuição
-
-Este é um projeto acadêmico desenvolvido como parte da disciplina de Banco de Dados 3.
-
-## Licença
-
-Este projeto está sob a licença MIT.
