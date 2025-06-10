@@ -9,15 +9,9 @@ class PerformanceTest:
         self.spark = None
         self.pg_conn = None
         self.pg_cursor = None
-        self.spark_df = None
         self.results = {
-            'spark': {
-                'load_time': 0,
-                'queries': {}
-            },
-            'postgres': {
-                'queries': {}
-            }
+            'spark': {},
+            'postgres': {}
         }
 
     def setup_spark(self):
@@ -27,20 +21,6 @@ class PerformanceTest:
                 .master(SPARK_CONFIG['master']) \
                 .getOrCreate()
             print("Sessão Spark criada com sucesso!")
-            
-            # Carrega os dados uma única vez
-            print("\nCarregando dados no Spark...")
-            load_start = time.time()
-            self.spark_df = self.spark.read.csv(
-                SPARK_CONFIG['data_path'],
-                header=GENERAL_CONFIG['csv_header'],
-                sep=GENERAL_CONFIG['csv_separator'],
-                inferSchema=GENERAL_CONFIG['infer_schema']
-            )
-            load_end = time.time()
-            self.results['spark']['load_time'] = load_end - load_start
-            print(f"Tempo de carregamento dos dados no Spark: {self.results['spark']['load_time']:.4f} segundos")
-            
         except Exception as e:
             print(f"Erro ao criar sessão Spark: {e}")
             raise
@@ -58,13 +38,20 @@ class PerformanceTest:
         print(f"\nExecutando teste Spark: {query_name}")
         start_time = time.time()
         
-        result = query_func(self.spark_df)
+        df = self.spark.read.csv(
+            SPARK_CONFIG['data_path'],
+            header=GENERAL_CONFIG['csv_header'],
+            sep=GENERAL_CONFIG['csv_separator'],
+            inferSchema=GENERAL_CONFIG['infer_schema']
+        )
+        
+        result = query_func(df)
         result.show()
         
         end_time = time.time()
         execution_time = end_time - start_time
-        self.results['spark']['queries'][query_name] = execution_time
-        print(f"Tempo de execução da consulta Spark: {execution_time:.4f} segundos")
+        self.results['spark'][query_name] = execution_time
+        print(f"Tempo de execução Spark: {execution_time:.4f} segundos")
 
     def run_postgres_test(self, query_name, query):
         print(f"\nExecutando teste PostgreSQL: {query_name}")
@@ -79,8 +66,8 @@ class PerformanceTest:
         
         end_time = time.time()
         execution_time = end_time - start_time
-        self.results['postgres']['queries'][query_name] = execution_time
-        print(f"Tempo de execução da consulta PostgreSQL: {execution_time:.4f} segundos")
+        self.results['postgres'][query_name] = execution_time
+        print(f"Tempo de execução PostgreSQL: {execution_time:.4f} segundos")
 
     def run_all_tests(self):
         try:
@@ -104,15 +91,12 @@ class PerformanceTest:
         print("RESULTADOS DA COMPARAÇÃO")
         print("="*50)
         
-        print(f"\nTempo de carregamento inicial do Spark: {self.results['spark']['load_time']:.4f} segundos")
-        print("\nComparação dos tempos de consulta:")
-        
-        for query_name in self.results['spark']['queries'].keys():
+        for query_name in self.results['spark'].keys():
             print(f"\nConsulta: {query_name}")
-            print(f"Spark (apenas consulta): {self.results['spark']['queries'][query_name]:.4f} segundos")
-            print(f"PostgreSQL: {self.results['postgres']['queries'][query_name]:.4f} segundos")
+            print(f"Spark: {self.results['spark'][query_name]:.4f} segundos")
+            print(f"PostgreSQL: {self.results['postgres'][query_name]:.4f} segundos")
             
-            diff = self.results['spark']['queries'][query_name] - self.results['postgres']['queries'][query_name]
+            diff = self.results['spark'][query_name] - self.results['postgres'][query_name]
             faster = "PostgreSQL" if diff > 0 else "Spark"
             print(f"Diferença: {abs(diff):.4f} segundos (mais rápido: {faster})")
 
