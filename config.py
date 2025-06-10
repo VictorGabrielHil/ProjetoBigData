@@ -4,7 +4,7 @@ POSTGRES_CONFIG = {
     'port': '5432',
     'database': 'BigData',
     'user': 'postgres',
-    'password': '84846767'
+    'password': ''
 }
 
 # Configurações do Spark
