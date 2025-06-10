@@ -1,8 +1,8 @@
-import os
 import time
 import psycopg2
 import pandas as pd
 import numpy as np
+import os
 from pyspark.sql import SparkSession
 from config import POSTGRES_CONFIG, SPARK_CONFIG, GENERAL_CONFIG
 from queries import Queries
@@ -16,13 +16,8 @@ class DataProcessor:
             'spark': {},
             'postgres': {}
         }
-        self.csv_files = self._get_csv_files()
-
-    def _get_csv_files(self):
-        """Retorna lista de arquivos CSV ordenados por data"""
-        csv_dir = "Base de Dados"
-        files = [f for f in os.listdir(csv_dir) if f.endswith('.csv')]
-        return sorted(files)
+        # Usando um arquivo específico para o teste
+        self.csv_file = "2025-02-23_156_-_Base_de_Dados.csv"
 
     def setup_postgres(self):
         """Configura conexão com PostgreSQL e cria/recria tabela"""
@@ -35,10 +30,17 @@ class DataProcessor:
             self.pg_cursor.execute("""
                 DROP TABLE IF EXISTS requisicoes;
                 CREATE TABLE requisicoes (
-                    Orgao VARCHAR(255),
-                    Bairro VARCHAR(255),
-                    DataCriacao VARCHAR(50),
-                    DataResposta VARCHAR(50)
+                    Tipo VARCHAR(100) NOT NULL,
+                    Orgao VARCHAR(200) NOT NULL,
+                    DataCriacao VARCHAR(20) NOT NULL,
+                    Assunto VARCHAR(100) NOT NULL,
+                    Subdivisao VARCHAR(100) NOT NULL,
+                    Situacao VARCHAR(100) NOT NULL,
+                    Logradouro VARCHAR(200) NOT NULL,
+                    Bairro VARCHAR(100),
+                    Regional VARCHAR(100),
+                    Origem VARCHAR(50) NOT NULL,
+                    DataResposta VARCHAR(20)
                 );
             """)
             self.pg_conn.commit()
@@ -51,6 +53,9 @@ class DataProcessor:
     def setup_spark(self):
         """Configura sessão Spark"""
         try:
+            # Garante que o Spark use o Python correto
+            os.environ["PYSPARK_PYTHON"] = "python"
+            os.environ["PYSPARK_DRIVER_PYTHON"] = "python"
             self.spark = SparkSession.builder \
                 .appName(SPARK_CONFIG['app_name']) \
                 .master(SPARK_CONFIG['master']) \
@@ -62,7 +67,6 @@ class DataProcessor:
 
     def _clean_data(self, df):
         """Limpa os dados, substituindo NaN por NULL"""
-        # Substitui NaN por None (que será convertido para NULL no PostgreSQL)
         df = df.replace({np.nan: None})
         return df
 
@@ -71,24 +75,27 @@ class DataProcessor:
         print("\nCarregando dados no PostgreSQL...")
         start_time = time.time()
 
-        for csv_file in self.csv_files:
-            file_path = os.path.join("Base de Dados", csv_file)
-            print(f"Processando arquivo: {csv_file}")
-            
-            # Lê o CSV com pandas
-            df = pd.read_csv(file_path, sep=GENERAL_CONFIG['csv_separator'])
-            
-            # Limpa os dados
-            df = self._clean_data(df)
-            
-            # Insere os dados no PostgreSQL
-            for _, row in df.iterrows():
-                self.pg_cursor.execute("""
-                    INSERT INTO requisicoes (Orgao, Bairro, DataCriacao, DataResposta)
-                    VALUES (%s, %s, %s, %s)
-                """, (row['Orgao'], row['Bairro'], row['DataCriacao'], row['DataResposta']))
-            
-            self.pg_conn.commit()
+        file_path = os.path.join("Base de Dados", self.csv_file)
+        print(f"Processando arquivo: {self.csv_file}")
+        
+        # Lê o CSV com pandas
+        df = pd.read_csv(file_path, sep=GENERAL_CONFIG['csv_separator'])
+        
+        # Limpa os dados
+        df = self._clean_data(df)
+        
+        # Insere os dados no PostgreSQL
+        for _, row in df.iterrows():
+            self.pg_cursor.execute("""
+                INSERT INTO requisicoes (
+                    Tipo, Orgao, DataCriacao, Assunto, Subdivisao, Situacao, Logradouro, Bairro, Regional, Origem, DataResposta
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                row['Tipo'], row['Orgao'], row['DataCriacao'], row['Assunto'], row['Subdivisao'],
+                row['Situacao'], row['Logradouro'], row['Bairro'], row.get('Regional'), row['Origem'], row.get('DataResposta')
+            ))
+        
+        self.pg_conn.commit()
 
         end_time = time.time()
         print(f"Tempo total de carregamento no PostgreSQL: {end_time - start_time:.4f} segundos")
@@ -113,33 +120,26 @@ class DataProcessor:
         print("\nExecutando consultas no Spark...")
         queries = Queries.get_spark_queries()
 
-        for csv_file in self.csv_files:
-            file_path = os.path.join("Base de Dados", csv_file)
-            print(f"\nProcessando arquivo: {csv_file}")
+        file_path = os.path.join("Base de Dados", self.csv_file)
+        print(f"\nProcessando arquivo: {self.csv_file}")
+        
+        # Carrega dados no Spark
+        df = self.spark.read.csv(
+            file_path,
+            header=GENERAL_CONFIG['csv_header'],
+            sep=GENERAL_CONFIG['csv_separator'],
+            inferSchema=GENERAL_CONFIG['infer_schema']
+        )
+
+        # Executa consultas
+        for query_name, query_func in queries.items():
+            start_time = time.time()
+            query_func(df)
+            end_time = time.time()
             
-            # Carrega dados no Spark
-            df = self.spark.read.csv(
-                file_path,
-                header=GENERAL_CONFIG['csv_header'],
-                sep=GENERAL_CONFIG['csv_separator'],
-                inferSchema=GENERAL_CONFIG['infer_schema']
-            )
-
-            # Executa consultas
-            for query_name, query_func in queries.items():
-                start_time = time.time()
-                query_func(df)
-                end_time = time.time()
-                
-                execution_time = end_time - start_time
-                if query_name not in self.results['spark']:
-                    self.results['spark'][query_name] = 0
-                self.results['spark'][query_name] += execution_time
-                print(f"Tempo de execução Spark: {execution_time:.4f} segundos")
-
-        # Calcula média dos tempos
-        for query_name in self.results['spark']:
-            self.results['spark'][query_name] /= len(self.csv_files)
+            execution_time = end_time - start_time
+            self.results['spark'][query_name] = execution_time
+            print(f"Tempo de execução Spark: {execution_time:.4f} segundos")
 
     def print_comparison(self):
         """Exibe comparação dos resultados"""
@@ -168,7 +168,7 @@ O que testa: A capacidade da ferramenta em realizar cálculos complexos e agrupa
         
         for query_name in self.results['spark'].keys():
             print(query_descriptions[query_name])
-            print(f"Spark (média): {self.results['spark'][query_name]:.4f} segundos")
+            print(f"Spark: {self.results['spark'][query_name]:.4f} segundos")
             print(f"PostgreSQL: {self.results['postgres'][query_name]:.4f} segundos")
             
             diff = self.results['spark'][query_name] - self.results['postgres'][query_name]

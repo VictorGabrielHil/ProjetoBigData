@@ -18,5 +18,5 @@ SPARK_CONFIG = {
 GENERAL_CONFIG = {
     'csv_separator': ';',
     'csv_header': True,
-    'infer_schema': True
+    'infer_schema': False
 } 
