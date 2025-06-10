@@ -32,7 +32,6 @@ ProjetoBigData/
 ├── artifacts/                 # Diretório para armazenar resultados gerados (se houver).
 ├── config.py                  # Contém as configurações de conexão para PostgreSQL e Spark.
 ├── DataProcessor.py           # Script principal para processamento de UM ÚNICO arquivo CSV.
-├── DataProcessor_2.py         # Script para processar MÚLTIPLOS arquivos CSV na pasta Base de Dados.
 ├── queries.py                 # Define as funções de consulta para Spark (MapReduce/RDD) e consultas SQL para PostgreSQL.
 ├── requirements.txt           # Lista as dependências Python do projeto.
 ├── README.md                  # Este arquivo com a descrição do projeto e instruções.
@@ -73,16 +72,6 @@ Certifique-se de ter os seguintes softwares instalados e configurados:
 - **PostgreSQL:** Servidor de banco de dados rodando (pode ser local ou via Docker).
 
 ### 2. Instalação das Dependências Python
-
-É altamente recomendável criar um ambiente virtual (venv) para gerenciar as dependências:
-
-```bash
-python -m venv venv
-.\venv\Scripts\activate   # No Windows
-source venv/bin/activate # No Linux/macOS
-```
-
-Com o ambiente virtual ativado, instale as bibliotecas Python necessárias:
 
 ```bash
 pip install -r requirements.txt
@@ -131,11 +120,7 @@ _Observação:_ Em alguns ambientes Windows, pode ser necessário desativar o al
 
 Coloque os arquivos CSV da base de dados na pasta `Base de Dados/` dentro do diretório raiz do projeto.
 
-### 6. Executando os Scripts de Processamento
-
-Você pode executar dois scripts principais:
-
-#### a) Processamento de um único arquivo (para testes e depuração inicial)
+### 6. Executando o Script de Processamento
 
 Execute o script `DataProcessor.py`. Ele irá processar o arquivo CSV especificado internamente (atualmente `2025-02-23_156_-_Base_de_Dados.csv`), carregar no PostgreSQL, e executar as consultas comparando o desempenho.
 
@@ -143,14 +128,6 @@ Execute o script `DataProcessor.py`. Ele irá processar o arquivo CSV especifica
 python DataProcessor.py
 ```
 
-#### b) Processamento de múltiplos arquivos (para avaliação em conjunto)
-
-Execute o script `DataProcessor_2.py`. Ele irá iterar sobre _todos_ os arquivos CSV na pasta `Base de Dados/`, carregando-os no PostgreSQL e calculando o tempo médio das consultas Spark.
-
-```bash
-python DataProcessor_2.py
-```
-
 ### 7. Análise dos Resultados
 
-Os scripts imprimirão os tempos de execução diretamente no console, apresentando a comparação entre Spark (MapReduce/RDD) e PostgreSQL (SQL) para cada consulta.
+O script imprimira o tempo de execução diretamente no console, apresentando a comparação entre Spark (MapReduce/RDD) e PostgreSQL (SQL) para cada consulta.
