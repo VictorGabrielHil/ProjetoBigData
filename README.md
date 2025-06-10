@@ -97,7 +97,7 @@ Crie o banco de dados `BigData` se ainda não existir.
 
 ### 4. Configuração do Spark
 
-O projeto configura a sessão Spark internamente. Certifique-se de que o Python está acessível ao Spark. No arquivo `DataProcessor.py` (e `DataProcessor_2.py`), as seguintes linhas garantem que o Spark use o Python correto:
+O projeto configura a sessão Spark internamente. Certifique-se de que o Python está acessível ao Spark. No arquivo `DataProcessor.py`, as seguintes linhas garantem que o Spark use o Python correto:
 
 ```python
 # Dentro da classe DataProcessor no método setup_spark
@@ -105,8 +105,6 @@ import os
 os.environ["PYSPARK_PYTHON"] = "python"
 os.environ["PYSPARK_DRIVER_PYTHON"] = "python"
 ```
-
-_Observação:_ Em alguns ambientes Windows, pode ser necessário desativar o alias do Python da Microsoft Store (`Configurações > Aplicativos > Aliases de execução do aplicativo`).
 
 ### 5. Preparação dos Dados
 
