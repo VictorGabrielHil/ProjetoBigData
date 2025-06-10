@@ -29,13 +29,12 @@ O foco é avaliar a performance e a eficiência de cada abordagem em um cenário
 ```
 ProjetoBigData/
 ├── Base de Dados/             # Contém os arquivos CSV brutos para processamento.
-├── artifacts/                 # Diretório para armazenar resultados gerados (se houver).
 ├── config.py                  # Contém as configurações de conexão para PostgreSQL e Spark.
-├── DataProcessor.py           # Script principal para processamento de UM ÚNICO arquivo CSV.
+├── DataProcessor.py           # Script principal para processamento do arquivo CSV.
 ├── queries.py                 # Define as funções de consulta para Spark (MapReduce/RDD) e consultas SQL para PostgreSQL.
 ├── requirements.txt           # Lista as dependências Python do projeto.
 ├── README.md                  # Este arquivo com a descrição do projeto e instruções.
-└── .git/                      # Diretório de controle de versão do Git.
+
 ```
 
 ## Dicionário de Dados (Base de Dados CSV)
