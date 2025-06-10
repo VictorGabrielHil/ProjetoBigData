@@ -32,7 +32,6 @@ ProjetoBigData/
 ├── config.py                  # Contém as configurações de conexão para PostgreSQL e Spark.
 ├── DataProcessor.py           # Script principal para processamento do arquivo CSV.
 ├── queries.py                 # Define as funções de consulta para Spark (MapReduce/RDD) e consultas SQL para PostgreSQL.
-├── requirements.txt           # Lista as dependências Python do projeto.
 ├── README.md                  # Este arquivo com a descrição do projeto e instruções.
 
 ```
@@ -72,18 +71,12 @@ Certifique-se de ter os seguintes softwares instalados e configurados:
 
 ### 2. Instalação das Dependências Python
 
-```bash
-pip install -r requirements.txt
-```
 
-O `requirements.txt` deve conter:
-
-```
 pyspark==3.5.0
 psycopg2-binary==2.9.9
 pandas==2.1.4
 numpy
-```
+
 
 ### 3. Configuração do PostgreSQL
 
